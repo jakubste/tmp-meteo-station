@@ -1,2 +1,3 @@
-# tmp-meteo-station
-Projekt na Technikę Mikroprocesorową
+# Stacja Meteo
+
+Projekt na Technikę Mikroprocesorową  
