@@ -71,24 +71,23 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
 
-// struct `Data` is used to store data received from DHT11
-struct Data {
+// struct `DHTData` is used to store DHTData received from DHT11
+struct DHTData {
     double humidity;
     double temperature;
     int status;
-} data;
+};
 
-
-Data read(uint8_t pin) {
+struct DHTData read(uint8_t pin) {
     uint8_t bytes[BYTES_NUMBER] = {0};
     // cnt and idx indicate position to store received bit in bytes table
     uint8_t cnt = 7; // bit position in current byte
     uint8_t idx = 0; // current byte
 
-    struct Data tempData;
-    tempData.status = 0; // 0 is good, if we fail we'd change this to negative number
+    struct DHTData tempDHTData;
+    tempDHTData.status = 0; // 0 is good, if we fail we'd change this to negative number
 
-    // we're sending request for data to DHT11
+    // we're sending request for DHTData to DHT11
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
     delay(REQUEST_LOW); // low signal for 20 ms
@@ -101,21 +100,21 @@ Data read(uint8_t pin) {
     // we're listening DHT11's start signal
     t = micros();
     while (digitalRead(pin) == LOW)
-        if (t + TIMEOUT < micros()) tempData.status = -2;
+        if (t + TIMEOUT < micros()) tempDHTData.status = -2;
 
     t = micros();
     while (digitalRead(pin) == HIGH)
-        if (t + TIMEOUT < micros()) tempData.status = -2;
+        if (t + TIMEOUT < micros()) tempDHTData.status = -2;
 
-    // receiving data
+    // receiving DHTData
     for (int i = 0; i < BITS_NUMBER; i++) {
         t = micros();
         while (digitalRead(pin) == LOW)
-            if (t + TIMEOUT < micros()) tempData.status = -2;
+            if (t + TIMEOUT < micros()) tempDHTData.status = -2;
 
         t = micros();
         while (digitalRead(pin) == HIGH)
-            if (t + TIMEOUT < micros()) tempData.status = -2;
+            if (t + TIMEOUT < micros()) tempDHTData.status = -2;
 
         if ((micros() - t) > 40) bytes[idx] |= (1 << cnt);
         if (cnt == 0)   // next byte?
@@ -127,14 +126,14 @@ Data read(uint8_t pin) {
     }
 
     // CONVERT AND STORE
-    tempData.humidity = bytes[0];  // bytes[1] == 0;
-    tempData.temperature = bytes[2];  // bytes[3] == 0;
+    tempDHTData.humidity = bytes[0];  // bytes[1] == 0;
+    tempDHTData.temperature = bytes[2];  // bytes[3] == 0;
 
     // TEST CHECKSUM
     uint8_t sum = bytes[0] + bytes[2]; // bytes[1] && bytes[3] both 0
-    if (bytes[4] != sum) tempData.status = -1;
+    if (bytes[4] != sum) tempDHTData.status = -1;
 
-    return tempData;
+    return tempDHTData;
 }
 
 void setup(void) {
@@ -191,76 +190,29 @@ void setup(void) {
 
 void loop() {
 
-    struct Data tempData = read(dht_dpin);;
+    struct DHTData tempDHTData = read(dht_dpin);;
     delay(1000);
 
     Serial.print("Wilgotnosc = ");
-    Serial.print(tempData.humidity);
+    Serial.print(tempDHTData.humidity);
     Serial.print("%  ");
     Serial.print("temperatura = ");
-    Serial.print(tempData.temperature);
+    Serial.print(tempDHTData.temperature);
     Serial.println("C  ");
+ 
+    tft.fillRect(169, 99, 30, 30, BLACK);
 
-    digitalWrite(13, HIGH);
-    // Recently Point was renamed TSPoint in the TouchScreen library
-    // If you are using an older version of the library, use the
-    // commented definition instead.
-    // Point p = ts.getPoint();
-    TSPoint p = ts.getPoint();
-    digitalWrite(13, LOW);
+    tft.setCursor(170, 100);
 
-    // if sharing pins, you'll need to fix the directions of the touchscreen pins
-    //pinMode(XP, OUTPUT);
-    pinMode(XM, OUTPUT);
-    pinMode(YP, OUTPUT);
-    //pinMode(YM, OUTPUT);
+    tft.print((int)tempDHTData.temperature);
+    tft.print(" C");
 
-    // we have some minimum pressure we consider 'valid'
-    // pressure of 0 means no pressing!
+    tft.fillRect(169, 149, 30, 30, BLACK);
+    tft.setCursor(170, 150);
 
-    if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-#ifdef DEBUG
-        Serial.print("X = ");
-        Serial.print(p.x);
-        Serial.print("\tY = ");
-        Serial.print(p.y);
-        Serial.print("\tPressure = ");
-        Serial.println(p.z);
-#endif // DEBUG
-        //if (p.y < (TS_MINY - 5)) stergere();
-        // scale from 0->1023 to tft.width
-        p.x = tft.width() - (map(p.x, TS_MINX, TS_MAXX, tft.width(), 0));
-        p.y = tft.height() - (map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-#ifdef DEBUG
-        Serial.print("(");
-        Serial.print(p.x);
-        Serial.print(", ");
-        Serial.print(p.y);
-        Serial.println(")");
-#endif // DEBUG
+    tft.print((int)tempDHTData.humidity);
+    tft.println(" %");
 
-        if (120 < p.x && p.x < 180 && 240 < p.y && p.y < 300) {
-#ifdef DEBUG
-            Serial.println("Klik");
-            delay(100);
-#endif
-
-            tft.fillRect(170, 100, 20, 20, BLACK);
-
-            tft.setCursor(170, 100);
-
-            tft.print(tempData.temperature);
-            tft.print(" C");
-
-            tft.fillRect(170, 150, 20, 20, BLACK);
-            tft.setCursor(170, 150);
-
-            tft.println(tempData.humidity);
-            tft.println(" %");
-
-
-        }
-    }
 }
 
 
