@@ -20,7 +20,7 @@ Data read(uint8_t pin)
   uint8_t idx = 0;
 
   struct Data tempData;
-  tempData.status = 0
+  tempData.status = 0;
 
   // MC wysyla zapytanie o dane do czujnika
   pinMode(pin, OUTPUT);

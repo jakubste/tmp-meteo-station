@@ -28,7 +28,7 @@
 #define YM 7   // can be a digital pin
 #define XP 6   // can be a digital pin
 // DHT11
-#define dht_dpin A0
+#define dht_dpin 30
 
 
 /*** CONSTS DEFINITION ***/
@@ -69,11 +69,6 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
 // lcd object declarations
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
-
-
-String data[2][2] = {"10", "20", "30", "40"};
-
-int cur = 0;
 
 
 // struct `Data` is used to store data received from DHT11
@@ -142,21 +137,6 @@ Data read(uint8_t pin) {
     return tempData;
 }
 
-
-void loop() {
-
-    struct Data tempData = read(dht_dpin);;
-
-    Serial.print("Wilgotnosc = ");
-    Serial.print(tempData.humidity);
-    Serial.print("%  ");
-    Serial.print("temperatura = ");
-    Serial.print(tempData.temperature);
-    Serial.println("C  ");
-    delay(1000);
-}
-
-
 void setup(void) {
 
     Serial.begin(9600);
@@ -171,11 +151,11 @@ void setup(void) {
 
     if (identifier == 0x9341) {
 #ifdef DEBUG
-        Serial.println('Ekran zidentyfikowany poprawnie');
+        Serial.println("Ekran zidentyfikowany poprawnie");
 #endif // DEBUG
     } else {
 #ifdef DEBUG
-        Serial.println('[error] Ekran zidentyfikowany błędnie!');
+        Serial.println("[error] Ekran zidentyfikowany błędnie!");
 #endif // DEBUG
         identifier = 0x9341;
     }
@@ -205,26 +185,22 @@ void setup(void) {
 
     tft.setTextColor(WHITE);
 
-    tft.fillRect(170, 100, 20, 20, BLACK);
-
-    tft.setCursor(170, 100);
-
-    tft.println(data[cur][0]);
-
-    tft.fillRect(170, 150, 20, 20, BLACK);
-    tft.setCursor(170, 150);
-
-    tft.println(data[cur][1]);
-
-    cur = cur + 1;
-    cur = cur % 2;
-
 
 }
 
 
-
 void loop() {
+
+    struct Data tempData = read(dht_dpin);;
+    delay(1000);
+
+    Serial.print("Wilgotnosc = ");
+    Serial.print(tempData.humidity);
+    Serial.print("%  ");
+    Serial.print("temperatura = ");
+    Serial.print(tempData.temperature);
+    Serial.println("C  ");
+
     digitalWrite(13, HIGH);
     // Recently Point was renamed TSPoint in the TouchScreen library
     // If you are using an older version of the library, use the
@@ -251,7 +227,7 @@ void loop() {
         Serial.print("\tPressure = ");
         Serial.println(p.z);
 #endif // DEBUG
-        if (p.y < (TS_MINY - 5)) stergere();
+        //if (p.y < (TS_MINY - 5)) stergere();
         // scale from 0->1023 to tft.width
         p.x = tft.width() - (map(p.x, TS_MINX, TS_MAXX, tft.width(), 0));
         p.y = tft.height() - (map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
@@ -273,15 +249,15 @@ void loop() {
 
             tft.setCursor(170, 100);
 
-            tft.println(data[cur][0]);
+            tft.print(tempData.temperature);
+            tft.print(" C");
 
             tft.fillRect(170, 150, 20, 20, BLACK);
             tft.setCursor(170, 150);
 
-            tft.println(data[cur][1]);
+            tft.println(tempData.humidity);
+            tft.println(" %");
 
-            cur = cur + 1;
-            cur = cur % 2;
 
         }
     }
